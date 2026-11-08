@@ -35,6 +35,10 @@ class GameRoom extends Room {
       this.broadcast("shot", { shooter: client.sessionId, ...data }, { except: client });
     });
 
+    this.onMessage("emote", (client, data) => {
+      this.broadcast("emote", { shooter: client.sessionId, ...data });
+    });
+
     this.onMessage("damage", (client, data) => {
       const target = this.state.players.get(data.targetId);
       if (!target || !target.alive) return;
