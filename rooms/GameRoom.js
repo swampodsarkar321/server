@@ -38,7 +38,11 @@ class GameRoom extends Room {
     this.onMessage("damage", (client, data) => {
       const target = this.state.players.get(data.targetId);
       if (!target || !target.alive) return;
-      target.health = Math.max(0, target.health - (data.amount || 0));
+      // Apply the same shield formula used client-side so health stays in sync
+      let dmg = data.amount || 0;
+      let absorbed = Math.min(target.shield || 0, dmg * 0.65);
+      target.shield = Math.max(0, (target.shield || 0) - absorbed);
+      target.health = Math.max(0, target.health - (dmg - absorbed));
       if (target.health <= 0) { target.alive = false; }
       this.broadcast("damage", { targetId: data.targetId, amount: data.amount, killer: client.sessionId });
     });
