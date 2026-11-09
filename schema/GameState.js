@@ -13,6 +13,7 @@ const Player = schema({
   isBot: t.boolean().default(false),
   charId: t.string().default("swat"),
   kills: t.number().default(0),
+  teamId: t.string().default(""),
 }, "Player");
 
 const GameState = schema({

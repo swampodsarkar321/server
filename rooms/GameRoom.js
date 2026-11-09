@@ -69,6 +69,7 @@ class GameRoom extends Room {
     p.isBot = false;
     p.alive = true;
     p.health = 100;
+    p.teamId = (options && options.teamId) ? String(options.teamId).slice(0, 32) : "";
     this.state.players.set(client.sessionId, p);
 
     // always wait for the matchmaking countdown so real players can join
@@ -84,6 +85,26 @@ class GameRoom extends Room {
     this.started = true;
     if (this.lobbyTimer) { this.lobbyTimer.clear(); this.lobbyTimer = null; }
 
+    const spawnCorners = [
+      { x: 374, z: 374 }, { x: -374, z: 374 }, { x: 374, z: -374 }, { x: -374, z: -374 },
+    ];
+    let cornerIndex = 0;
+    const teamSpawn = {};
+    for (const [id, player] of this.state.players.entries()) {
+      if (player.isBot) continue;
+      const tid = player.teamId || id; // solo players get unique teams too
+      if (!teamSpawn[tid]) {
+        teamSpawn[tid] = spawnCorners[cornerIndex % spawnCorners.length];
+        cornerIndex++;
+      }
+      const c = teamSpawn[tid];
+      const ox = (Math.random() - 0.5) * 8;
+      const oz = (Math.random() - 0.5) * 8;
+      player.x = c.x + ox;
+      player.z = c.z + oz;
+      player.y = 0;
+    }
+
     // Fill every remaining slot so every match has 20 combatants.
     const humanCount = this.clients.length;
     const botCount = Math.max(0, MAX_PLAYERS - humanCount);
@@ -95,12 +116,18 @@ class GameRoom extends Room {
       p.isBot = true;
       p.alive = true;
       p.health = 100;
-      // random spawn around origin
-      const a = Math.random() * Math.PI * 2;
-      const r = 20 + Math.random() * 60;
-      p.x = Math.cos(a) * r;
-      p.z = Math.sin(a) * r;
+      const botTeamId = "botteam_" + Math.floor(i / 2);
+      if (!teamSpawn[botTeamId]) {
+        teamSpawn[botTeamId] = spawnCorners[cornerIndex % spawnCorners.length];
+        cornerIndex++;
+      }
+      const c = teamSpawn[botTeamId];
+      const ox = (Math.random() - 0.5) * 6;
+      const oz = (Math.random() - 0.5) * 6;
+      p.x = c.x + ox;
+      p.z = c.z + oz;
       p.y = 0;
+      p.teamId = botTeamId;
       this.state.players.set(id, p);
     }
 
